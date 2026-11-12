@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GBCS 机体韧性评分计算器</title>
+<style>
+:root{color-scheme:light;font:16px/1.55 "PingFang SC","Microsoft YaHei",sans-serif;color:#142e2c;background:#edf3ef}
+*{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:auto;padding:54px 24px}
+header{margin-bottom:26px}h1{font-size:clamp(28px,5vw,44px);letter-spacing:-.04em;margin:0 0 8px}
+p{margin:0 0 12px}.muted,small{color:#4e6864}.layout{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+article,aside{background:#fff;border:1px solid #d3e1db;border-radius:18px;padding:24px}
+h2{font-size:19px;margin:0 0 12px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+label{display:block;font-size:14px;font-weight:650}small{font-weight:400}
+input,select,button{font:inherit}input,select{display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #96aca5;border-radius:8px;background:white;color:inherit}
+:focus-visible{outline:3px solid #bf661a;outline-offset:2px}.actions{display:flex;gap:10px;margin-top:19px}
+button{padding:10px 18px;border:1px solid #246353;border-radius:8px;color:white;background:#185747;cursor:pointer}
+button.secondary{background:#fff;color:#185747}.error{color:#9c3020;margin-top:10px}
+output{display:block}.score{font-size:64px;font-weight:750;line-height:1.05;letter-spacing:-.05em;color:#185747}
+.scale{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:18px 0}
+.scale span{background:#e6eee8;text-align:center;border-radius:4px;font-size:12px;padding:5px 0}
+.scale .active{background:#185747;color:white;font-weight:700}
+details{margin-top:18px}summary{cursor:pointer;font-weight:650}details p{margin-top:10px}
+@media(max-width:700px){main{padding:28px 16px}.layout{grid-template-columns:1fr}article,aside{padding:18px}}
+</style>
+
+</head>
+<body><main>
+<header><h1>机体韧性评分计算器</h1><p class="muted">GBCS 8 项研究版 · 适用年龄 50–100 岁</p></header>
+<div class="layout">
+<article><h2>录入体检结果</h2>
+<form id="inputs">
+<div class="fields">
+<label>性别<select id="sex" required><option value="">请选择</option><option value="0">女性</option><option value="1">男性</option></select></label>
+<label>年龄 <small>岁</small><input id="age" type="number" min="50" max="100" step="any" required></label>
+<label>白细胞 WBC <small>×10⁹/L</small><input id="wbc" type="number" step="any" required></label>
+<label>血红蛋白 HGB <small>g/L</small><input id="hgb" type="number" step="any" required></label>
+<label>红细胞分布宽度 RDW-CV <small>%</small><input id="rdw" type="number" step="any" required></label>
+<label>血小板 PLT <small>×10⁹/L</small><input id="plt" type="number" step="any" required></label>
+<label>高密度脂蛋白 HDL-C <small>mmol/L</small><input id="hdl" type="number" step="any" required></label>
+<label>甘油三酯 TG <small>mmol/L</small><input id="tg" type="number" step="any" required></label>
+<label>收缩压 SBP <small>mmHg</small><input id="sbp" type="number" step="any" required></label>
+<label>舒张压 DBP <small>mmHg</small><input id="dbp" type="number" step="any" required></label>
+</div><div class="actions"><button type="submit">计算评分</button><button class="secondary" type="reset">清空</button></div>
+<p id="error" class="error" role="alert"></p></form></article>
+<aside><h2>评分结果</h2><output id="result" aria-live="polite">填写全部指标后即可计算。</output>
+<div class="scale" id="scale" aria-hidden="true"></div>
+<p class="muted">分数表示在 GBCS 开发样本中的相对位置。评分供体检研究和结果展示使用，临床判断请结合各项体检结果。</p>
+<details><summary>计算方法与单位</summary><p>对 TG 取自然对数，使用同性别 GBCS 参照的 Mahalanobis 距离计算连续 PRS，再按固定十分位转换为 1–10 分。</p><p>若报告采用其他单位，HGB 从 g/dL 换算为 g/L 时乘以 10。HDL-C 和 TG 从 mg/dL 换算为 mmol/L 时分别除以 38.67 和 88.57。</p><p>体检数值在浏览器内计算。</p></details></aside>
+</div></main><script>
+const MODEL = {"markers":["wbc","hgb","rdw","plt","hdl","tg","sbp","dbp"],"bounds":[[0.5,60],[35,240],[8,35],[10,1000],[0.15,6],[0.1,35],[50,300],[20,180]],"m":2.74670805533205,"s":0.952462980043839,"cutoffs":[-1.21894277572565,-0.667129674727674,-0.331378881985481,-0.0735041910779214,0.148649105969074,0.353977796017798,0.555329141729243,0.781909008447275,1.0699588665129],"groups":[{"center":[6.08380523165117,132.068615138714,13.356376299753,232.135232332894,1.74280773729123,0.305558041253302,122.439091220459,70.0422422650987],"precision":[[0.537018206117183,-0.0130983936057062,-0.0596911739662551,-0.00404202064866302,0.1740478025072,-0.164439895889283,-0.00569847941747379,0.00436424302012091],[-0.0130983936057062,0.0099673359272777,0.0282693537664822,0.000125864451684329,-0.0264309143459935,-0.0322058083011327,0.000137782105661812,-0.00192281877374821],[-0.0596911739662551,0.0282693537664822,0.717619094027242,-0.000740896309482665,-0.0315030412479374,0.0475205539878701,-0.00215621259687769,-0.00516859929900509],[-0.00404202064866302,0.000125864451684329,-0.000740896309482667,0.000355496589041917,-0.00250842262742051,-0.0038172392699306,2.66061647356633e-05,-0.00011165394018253],[0.174047802507201,-0.0264309143459935,-0.0315030412479371,-0.00250842262742052,6.69603093751367,1.49772488281859,-0.0058344507085517,0.0181839887089162],[-0.164439895889283,-0.0322058083011327,0.0475205539878702,-0.00381723926993061,1.49772488281859,4.69801399676893,-0.00520807494546445,-0.014822914082723],[-0.00569847941747383,0.000137782105661812,-0.00215621259687769,2.66061647356635e-05,-0.00583445070855158,-0.00520807494546427,0.00509955013264941,-0.00656163447076606],[0.00436424302012103,-0.00192281877374821,-0.00516859929900525,-0.000111653940182531,0.0181839887089145,-0.0148229140827233,-0.00656163447076606,0.0192437362979595]]},{"center":[6.55243816690956,146.558627799206,13.7748233196452,212.24920494621,1.54449617067622,0.264294285458687,127.456861012956,73.8777974087161],"precision":[[0.410626248981974,-0.00720825250285986,-0.0173823917272717,-0.00395733770188498,0.161241104745512,-0.119811070650229,-0.00167103112409109,0.00068766378585699],[-0.00720825250285986,0.0066427770230577,0.0225408767742577,0.000140960591376869,-0.0195430188749771,-0.0321546756126769,0.000199274875962907,-0.00175176788415912],[-0.0173823917272717,0.0225408767742577,0.681271254297822,-0.000478848276759338,-0.0474336110163655,0.0497728175026834,-0.00194322896880516,-0.00194251203059831],[-0.00395733770188499,0.000140960591376869,-0.000478848276759337,0.000378144749162109,-0.00487651456361093,-0.00413283187291006,4.08217895068779e-05,-9.26584523388714e-05],[0.161241104745512,-0.0195430188749771,-0.0474336110163659,-0.00487651456361092,7.15709312749333,0.987443605558358,-0.00992472193061497,0.0179103619536501],[-0.119811070650229,-0.0321546756126769,0.0497728175026834,-0.00413283187291005,0.987443605558358,4.09741388544712,-0.00277305204234958,-0.0256064758183064],[-0.00167103112409107,0.000199274875962907,-0.00194322896880516,4.08217895068777e-05,-0.00992472193061452,-0.00277305204234962,0.00510399347805578,-0.00639807528158452],[0.000687663785856975,-0.00175176788415913,-0.0019425120305983,-9.26584523388724e-05,0.0179103619536505,-0.0256064758183057,-0.00639807528158452,0.0178709286484323]]}]};
+
+function calculatePRS(model, sex, values) {
+  const group = model.groups[sex];
+  if (!group || values.length !== model.markers.length ||
+      values.some((value, i) => !Number.isFinite(value) ||
+        value < model.bounds[i][0] || value > model.bounds[i][1])) {
+    throw new Error("请核对各项数值和报告单位。");
+  }
+  if (values[7] >= values[6]) throw new Error("舒张压应低于收缩压。");
+  const delta = values.map((value, i) =>
+    (model.markers[i] === "tg" ? Math.log(value) : value) - group.center[i]);
+  const squaredDistance = delta.reduce((sum, value, i) =>
+    sum + value * group.precision[i].reduce((row, coefficient, j) =>
+      row + coefficient * delta[j], 0), 0);
+  const score = (model.m - Math.sqrt(Math.max(0, squaredDistance))) / model.s;
+  const points = 1 + model.cutoffs.filter(cutoff => score >= cutoff).length;
+  return {score, points};
+}
+
+if (typeof document !== "undefined") {
+  const form = document.getElementById("inputs");
+  const result = document.getElementById("result");
+  const error = document.getElementById("error");
+  const scale = document.getElementById("scale");
+  const ticks = Array.from({length: 10}, (_, i) => {
+    const tick = document.createElement("span");
+    tick.textContent = i + 1;
+    scale.append(tick);
+    return tick;
+  });
+  function clearResult() {
+    result.textContent = "填写全部指标后即可计算。";
+    error.textContent = "";
+    ticks.forEach(tick => tick.classList.remove("active"));
+  }
+  for (const [i, marker] of MODEL.markers.entries()) {
+    const field = document.getElementById(marker);
+    [field.min, field.max] = MODEL.bounds[i];
+  }
+  form.addEventListener("input", clearResult);
+  form.addEventListener("reset", clearResult);
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+    clearResult();
+    try {
+      const sex = Number(document.getElementById("sex").value);
+      const values = MODEL.markers.map(marker => document.getElementById(marker).valueAsNumber);
+      const {score, points} = calculatePRS(MODEL, sex, values);
+      const headline = document.createElement("div");
+      headline.className = "score";
+      headline.textContent = points + " / 10";
+      const detail = document.createElement("p");
+      detail.textContent = "连续 PRS " + score.toFixed(3) + " · GBCS 第 " +
+        (points - 1) * 10 + "–" + points * 10 + " 百分位区间";
+      result.replaceChildren(headline, detail);
+      ticks[points - 1].classList.add("active");
+    } catch (err) {
+      error.textContent = err.message;
+    }
+  });
+}
+
+</script></body></html>
